@@ -84,11 +84,23 @@
 
       svelteFrontend = (mkSvelteFrontend { inherit pkgs; }) {
         npmDepsHash = "sha256-MiK7O2dV35Ro1shjtrcnRinVS/31yKGTl5Jlfg+Po+M=";
-        basePath = "/nix-options-search/";
+        basePath = "/";
         optionsDatasets = [ ];
       };
 
       svelteFrontendWithData = (mkSvelteFrontend { inherit pkgs; }) {
+        npmDepsHash = "sha256-MiK7O2dV35Ro1shjtrcnRinVS/31yKGTl5Jlfg+Po+M=";
+        basePath = "/";
+        optionsDatasets = [
+          { source = "NixOS"; version = "unstable"; path = "${dataNixosUnstable}/options-unstable.json"; }
+          { source = "NixOS"; version = "25.11"; path = "${dataNixos25}/options-25.11.json"; }
+          { source = "Home Manager"; version = "unstable"; path = "${dataHomeManagerUnstable}/options-unstable.json"; }
+          { source = "Home Manager"; version = "25.11"; path = "${dataHomeManager25}/options-25.11.json"; }
+          { source = "AgentSpace"; version = "unstable"; path = "${dataAgentSpaceUnstable}/options-unstable.json"; }
+        ];
+      };
+
+      svelteFrontendWithDataPages = (mkSvelteFrontend { inherit pkgs; }) {
         npmDepsHash = "sha256-MiK7O2dV35Ro1shjtrcnRinVS/31yKGTl5Jlfg+Po+M=";
         basePath = "/nix-options-search/";
         optionsDatasets = [
@@ -121,6 +133,7 @@
       packages.${system} = {
         svelte-frontend = svelteFrontend;
         svelte-frontend-with-data = svelteFrontendWithData;
+        svelte-frontend-with-data-pages = svelteFrontendWithDataPages;
         serve-svelte-frontend = serveSvelteFrontend;
       };
 

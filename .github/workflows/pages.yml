@@ -34,7 +34,7 @@ jobs:
         uses: DeterminateSystems/magic-nix-cache-action@v8
 
       - name: Build site
-        run: nix build .#svelte-frontend-with-data
+        run: nix build .#svelte-frontend-with-data-pages
 
       - name: Prepare publish dir
         run: |

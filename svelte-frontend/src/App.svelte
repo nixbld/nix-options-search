@@ -161,7 +161,12 @@
     }
   }
 
-  $: syncUrlState();
+  $: if (initialized) {
+    selectedSource;
+    selectedVersion;
+    query;
+    syncUrlState();
+  }
 
   onMount(async () => {
     try {
