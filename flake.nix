@@ -84,11 +84,13 @@
 
       svelteFrontend = (mkSvelteFrontend { inherit pkgs; }) {
         npmDepsHash = "sha256-MiK7O2dV35Ro1shjtrcnRinVS/31yKGTl5Jlfg+Po+M=";
+        basePath = "/nix-options-search/";
         optionsDatasets = [ ];
       };
 
       svelteFrontendWithData = (mkSvelteFrontend { inherit pkgs; }) {
         npmDepsHash = "sha256-MiK7O2dV35Ro1shjtrcnRinVS/31yKGTl5Jlfg+Po+M=";
+        basePath = "/nix-options-search/";
         optionsDatasets = [
           { source = "NixOS"; version = "unstable"; path = "${dataNixosUnstable}/options-unstable.json"; }
           { source = "NixOS"; version = "25.11"; path = "${dataNixos25}/options-25.11.json"; }

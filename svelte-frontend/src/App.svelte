@@ -15,8 +15,35 @@
   let expandedTitles = new Set();
   let page = 1;
   const pageSize = 50;
+  let initialized = false;
+  let lastLoadedKey = '';
 
   const keyOf = (source, version) => `${source}::${version}`;
+
+  function applyStateFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const source = params.get('source') || '';
+    const version = params.get('version') || '';
+    const q = params.get('q');
+
+    if (q != null) query = q;
+    if (sources.includes(source)) {
+      selectedSource = source;
+      const sourceVersions = versionsForSource(source);
+      selectedVersion = sourceVersions.includes(version) ? version : defaultVersionForSource(source);
+    }
+  }
+
+  function syncUrlState() {
+    if (!initialized) return;
+    const params = new URLSearchParams();
+    if (selectedSource) params.set('source', selectedSource);
+    if (selectedVersion) params.set('version', selectedVersion);
+    if (query) params.set('q', query);
+    const qs = params.toString();
+    const next = `${window.location.pathname}${qs ? `?${qs}` : ''}`;
+    window.history.replaceState(null, '', next);
+  }
 
   async function loadUiConfig() {
     const res = await fetch('/data/ui-config.json');
@@ -26,6 +53,7 @@
     sources = [...new Set(datasets.map((d) => d.source))];
     selectedSource = sources[0] || '';
     selectedVersion = defaultVersionForSource(selectedSource);
+    applyStateFromUrl();
   }
 
   function versionsForSource(source) {
@@ -124,13 +152,21 @@
   $: filtered = filteredAll.slice((page - 1) * pageSize, page * pageSize);
 
   $: if (selectedSource && selectedVersion) {
-    loadOptions(selectedSource, selectedVersion);
+    const loadKey = `${selectedSource}::${selectedVersion}`;
+    if (loadKey !== lastLoadedKey) {
+      lastLoadedKey = loadKey;
+      loadOptions(selectedSource, selectedVersion);
+    }
   }
+
+  $: syncUrlState();
 
   onMount(async () => {
     try {
       await loadUiConfig();
       await loadCounts();
+      initialized = true;
+      syncUrlState();
     } catch (e) {
       error = `Failed to load ui config (${e.message})`;
     }

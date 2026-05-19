@@ -2,6 +2,7 @@
 {
   src ? ../svelte-frontend,
   optionsDatasets ? [ ],
+  basePath ? "/",
   pname ? "nix-options-search-frontend",
   version ? "0.1.0",
   npmDepsHash,
@@ -29,6 +30,7 @@ pkgs.buildNpmPackage {
   inherit pname version npmDepsHash;
   src = preparedSrc;
 
+  VITE_BASE = basePath;
   npmBuildScript = "build";
 
   installPhase = ''
