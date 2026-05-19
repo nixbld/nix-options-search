@@ -34,3 +34,7 @@ Reusable Nix building blocks for:
   };
 }
 ```
+
+## Credits
+
+- [hugo-theme-extranix-options-search](https://github.com/mipmip/hugo-theme-extranix-options-search)
