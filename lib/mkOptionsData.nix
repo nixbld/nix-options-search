@@ -1,8 +1,16 @@
 { pkgs }:
 {
-  moduleDocs,
+  moduleDocs ? null,
+  optionsJSONFile ? null,
   releaseName,
+  sourceName ? "NixOS",
 }:
+let
+  inputFile =
+    if optionsJSONFile != null then optionsJSONFile
+    else if moduleDocs != null then "${moduleDocs.optionsJSON}/share/doc/nixos/options.json"
+    else throw "mkOptionsData: set moduleDocs or optionsJSONFile";
+in
 pkgs.runCommand "options-data-${releaseName}"
   {
     nativeBuildInputs = [ pkgs.python3 ];
@@ -12,7 +20,7 @@ pkgs.runCommand "options-data-${releaseName}"
     mkdir -p "$out"
 
     python3 - "$out/options-${releaseName}.json" \
-      ${moduleDocs.optionsJSON}/share/doc/nixos/options.json <<'PY'
+      ${inputFile} <<'PY'
 from __future__ import annotations
 import datetime as dt
 import json
@@ -25,6 +33,8 @@ raw = json.loads(infile.read_text())
 
 options = []
 for title in sorted(raw.keys()):
+    if title.startswith("_module"):
+        continue
     val = raw[title]
 
     def literal_text(v):
@@ -55,6 +65,7 @@ for title in sorted(raw.keys()):
         'example': literal_text(val.get('example', "")),
         'declarations': declarations,
         'readOnly': bool(val.get('readOnly', False)),
+        'source': '${sourceName}',
     })
 
 out.write_text(json.dumps({

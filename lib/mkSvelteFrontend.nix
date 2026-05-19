@@ -1,29 +1,28 @@
 { pkgs, lib ? pkgs.lib }:
 {
   src ? ../svelte-frontend,
-  optionsData ? {
-    "25.11" = null;
-    "unstable" = null;
-  },
+  optionsDatasets ? [ ],
   pname ? "nix-options-search-frontend",
   version ? "0.1.0",
   npmDepsHash,
 }:
 let
-  dataFiles = lib.mapAttrsToList (ver: path:
-    if path == null then null else {
-      name = "options-${ver}.json";
-      value = path;
-    }
-  ) optionsData;
+  datasetEntries = map (d: d // {
+    file = "${lib.toLower (builtins.replaceStrings [" "] ["-"] d.source)}-${d.version}.json";
+  }) optionsDatasets;
+
+  uiConfig = pkgs.writeText "${pname}-ui-config.json" (builtins.toJSON {
+    datasets = map (d: {
+      inherit (d) source version file;
+    }) datasetEntries;
+  });
 
   preparedSrc = pkgs.runCommand "${pname}-src" {} ''
     cp -r ${src} $out
     chmod -R u+w $out
     mkdir -p $out/public/data
-    ${lib.concatStringsSep "\n" (lib.filter (s: s != "") (map (entry:
-      if entry == null then "" else "cp ${entry.value} $out/public/data/${entry.name}"
-    ) dataFiles))}
+    cp ${uiConfig} $out/public/data/ui-config.json
+    ${lib.concatStringsSep "\n" (map (d: "cp ${d.path} $out/public/data/${d.file}") datasetEntries)}
   '';
 in
 pkgs.buildNpmPackage {

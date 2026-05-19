@@ -4,9 +4,15 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     nixpkgs-25_11.url = "github:nixos/nixpkgs/nixos-25.11";
+    home-manager.url = "github:nix-community/home-manager/master";
+    home-manager-25_11.url = "github:nix-community/home-manager/release-25.11";
+    agentspace = {
+      url = "github:shazow/agentspace";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { nixpkgs, nixpkgs-25_11, ... }:
+  outputs = { nixpkgs, nixpkgs-25_11, home-manager, home-manager-25_11, agentspace, ... }:
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
@@ -16,28 +22,88 @@
       mkOptionSearchSite = import ./lib/mkOptionSearchSite.nix;
       mkSvelteFrontend = import ./lib/mkSvelteFrontend.nix;
       mkOptionsData = import ./lib/mkOptionsData.nix;
+      mkMergeOptionsData = import ./lib/mkMergeOptionsData.nix;
 
       nixosModulesUnstable = import (pkgs.path + "/nixos/modules/module-list.nix");
       nixosModules25 = import (pkgs25.path + "/nixos/modules/module-list.nix");
 
-      docsUnstable = (mkModuleDocs { inherit pkgs; }) {
+      docsNixosUnstable = (mkModuleDocs { inherit pkgs; }) {
         modules = nixosModulesUnstable;
         class = "nixos";
       };
 
-      docs25 = (mkModuleDocs { pkgs = pkgs25; }) {
+      docsNixos25 = (mkModuleDocs { pkgs = pkgs25; }) {
         modules = nixosModules25;
         class = "nixos";
       };
 
-      dataUnstable = (mkOptionsData { inherit pkgs; }) {
-        moduleDocs = docsUnstable;
-        releaseName = "unstable";
+      homeManagerOptionsUnstable = "${home-manager.packages.${system}.docs-json}/share/doc/home-manager/options.json";
+      homeManagerOptions25 = "${home-manager-25_11.packages.${system}.docs-json}/share/doc/home-manager/options.json";
+
+      docsAgentSpaceUnstable = (mkModuleDocs { inherit pkgs; }) {
+        modules = [
+          agentspace.inputs.microvm.nixosModules.microvm
+          agentspace.inputs.home-manager.nixosModules.home-manager
+          (import "${agentspace.outPath}/sandbox-qemu.nix")
+        ];
+        class = "nixos";
+        filterOption = path: _:
+          builtins.length path > 0 && builtins.head path == "agentspace";
       };
 
-      data25 = (mkOptionsData { inherit pkgs; }) {
-        moduleDocs = docs25;
+      dataNixosUnstable = (mkOptionsData { inherit pkgs; }) {
+        moduleDocs = docsNixosUnstable;
+        releaseName = "unstable";
+        sourceName = "NixOS";
+      };
+
+      dataNixos25 = (mkOptionsData { inherit pkgs; }) {
+        moduleDocs = docsNixos25;
         releaseName = "25.11";
+        sourceName = "NixOS";
+      };
+
+      dataHomeManagerUnstable = (mkOptionsData { inherit pkgs; }) {
+        optionsJSONFile = homeManagerOptionsUnstable;
+        releaseName = "unstable";
+        sourceName = "Home Manager";
+      };
+
+      dataHomeManager25 = (mkOptionsData { inherit pkgs; }) {
+        optionsJSONFile = homeManagerOptions25;
+        releaseName = "25.11";
+        sourceName = "Home Manager";
+      };
+
+      dataAgentSpaceUnstable = (mkOptionsData { inherit pkgs; }) {
+        moduleDocs = docsAgentSpaceUnstable;
+        releaseName = "unstable";
+        sourceName = "AgentSpace";
+      };
+
+
+      svelteFrontend = (mkSvelteFrontend { inherit pkgs; }) {
+        npmDepsHash = "sha256-MiK7O2dV35Ro1shjtrcnRinVS/31yKGTl5Jlfg+Po+M=";
+        optionsDatasets = [ ];
+      };
+
+      svelteFrontendWithData = (mkSvelteFrontend { inherit pkgs; }) {
+        npmDepsHash = "sha256-MiK7O2dV35Ro1shjtrcnRinVS/31yKGTl5Jlfg+Po+M=";
+        optionsDatasets = [
+          { source = "NixOS"; version = "unstable"; path = "${dataNixosUnstable}/options-unstable.json"; }
+          { source = "NixOS"; version = "25.11"; path = "${dataNixos25}/options-25.11.json"; }
+          { source = "Home Manager"; version = "unstable"; path = "${dataHomeManagerUnstable}/options-unstable.json"; }
+          { source = "Home Manager"; version = "25.11"; path = "${dataHomeManager25}/options-25.11.json"; }
+          { source = "AgentSpace"; version = "unstable"; path = "${dataAgentSpaceUnstable}/options-unstable.json"; }
+        ];
+      };
+
+      serveSvelteFrontend = pkgs.writeShellApplication {
+        name = "serve-svelte-frontend";
+        runtimeInputs = [ pkgs.static-web-server ];
+        text = ''
+          exec static-web-server --root ${svelteFrontendWithData} --port 4445
+        '';
       };
     in
     {
@@ -47,22 +113,18 @@
         mkNamespaceFilter = import ./lib/mkNamespaceFilter.nix { inherit pkgs; };
         mkSvelteFrontend = mkSvelteFrontend;
         mkOptionsData = mkOptionsData;
+        mkMergeOptionsData = mkMergeOptionsData;
       };
 
       packages.${system} = {
-        svelte-frontend =
-          (mkSvelteFrontend { inherit pkgs; }) {
-            npmDepsHash = "sha256-MiK7O2dV35Ro1shjtrcnRinVS/31yKGTl5Jlfg+Po+M=";
-          };
+        svelte-frontend = svelteFrontend;
+        svelte-frontend-with-data = svelteFrontendWithData;
+        serve-svelte-frontend = serveSvelteFrontend;
+      };
 
-        svelte-frontend-with-data =
-          (mkSvelteFrontend { inherit pkgs; }) {
-            npmDepsHash = "sha256-MiK7O2dV35Ro1shjtrcnRinVS/31yKGTl5Jlfg+Po+M=";
-            optionsData = {
-              "25.11" = "${data25}/options-25.11.json";
-              unstable = "${dataUnstable}/options-unstable.json";
-            };
-          };
+      apps.${system}.serve-svelte-frontend = {
+        type = "app";
+        program = "${serveSvelteFrontend}/bin/serve-svelte-frontend";
       };
 
       formatter.${system} = pkgs.nixfmt;

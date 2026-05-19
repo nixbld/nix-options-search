@@ -6,6 +6,8 @@ Reusable Nix building blocks for:
 - `lib.mkOptionSearchSite`
 - `lib.mkNamespaceFilter`
 - `lib.mkSvelteFrontend`
+- `lib.mkOptionsData`
+- `lib.mkMergeOptionsData`
 - examples under `./examples`
 
 ## Usage
@@ -43,19 +45,26 @@ This flake now exposes:
 - `packages.x86_64-linux.svelte-frontend`
 - `packages.x86_64-linux.svelte-frontend-with-data`
 
-And a reusable builder:
+And a reusable builder (one JSON per `<source>-<version>` dataset):
 
 ```nix
 mkSvelteFrontend = nix-options-search.lib.mkSvelteFrontend { inherit pkgs; };
 frontend = mkSvelteFrontend {
   npmDepsHash = "sha256-MiK7O2dV35Ro1shjtrcnRinVS/31yKGTl5Jlfg+Po+M=";
-  optionsData = {
-    "25.11" = ./options-25.11.json;
-    unstable = ./options-unstable.json;
-  };
+  optionsDatasets = [
+    { source = "NixOS"; version = "unstable"; path = ./nixos-unstable.json; }
+    { source = "NixOS"; version = "25.11"; path = ./nixos-25.11.json; }
+    { source = "Home Manager"; version = "unstable"; path = ./home-manager-unstable.json; }
+  ];
 };
 ```
 
-## Credits
+The flake also exposes an app to serve the built frontend on port `4445`:
 
-- [hugo-theme-extranix-options-search](https://github.com/mipmip/hugo-theme-extranix-options-search)
+```bash
+nix run .#serve-svelte-frontend
+```
+
+## Attribution
+
+Frontend design inspired by [search.nixos.org](https://search.nixos.org).
