@@ -1,65 +1,81 @@
 <script>
-  const query = 'services';
-  const versions = ['25.11', 'unstable'];
-  const sources = [
-    { name: 'NixOS', count: '10k+' },
-    { name: 'Modular services', count: '0' },
-    { name: 'Home Manager', count: '1.0k' }
-  ];
+  import { onMount } from 'svelte';
 
-  const results = [
-    {
-      title: 'services.activitywatch.enable',
-      description: 'Whether to enable ActivityWatch service.',
-      type: 'boolean',
-      defaultValue: 'false',
-      declaredIn: 'modules/services/activitywatch.nix'
-    },
-    {
-      title: 'services.activitywatch.extraOptions',
-      description: 'Extra command-line options for activitywatch.',
-      type: 'list of string',
-      defaultValue: '[ ]',
-      declaredIn: 'modules/services/activitywatch.nix'
-    },
-    {
-      title: 'services.activitywatch.package',
-      description: 'The activitywatch package to use.',
-      type: 'package',
-      defaultValue: 'pkgs.activitywatch',
-      declaredIn: 'modules/services/activitywatch.nix'
-    },
-    {
-      title: 'services.activitywatch.settings',
-      description: 'Raw settings passed to the service.',
-      type: 'attribute set',
-      defaultValue: '{ }',
-      declaredIn: 'modules/services/activitywatch.nix'
-    }
-  ];
+  let query = 'services';
+  const versions = ['25.11', 'unstable'];
+  const sources = ['NixOS', 'Modular services', 'Home Manager'];
 
   let selectedVersion = versions[0];
-  let selectedSource = sources[2].name;
-  let expandedTitle = results[2].title;
+  let selectedSource = 'Home Manager';
+
+  let options = [];
+  let loading = false;
+  let error = '';
+  let lastUpdate = '';
+  let expandedTitle = null;
+
+  const sourceBadge = {
+    NixOS: '10k+',
+    'Modular services': '0',
+    'Home Manager': '1.0k'
+  };
+
+  function detectSource(option) {
+    const decl = (option.declarations?.[0]?.name || '').toLowerCase();
+    const loc = (option.loc || []).join('.').toLowerCase();
+    const hay = `${decl} ${loc}`;
+
+    if (hay.includes('home-manager') || hay.includes('home.nix')) return 'Home Manager';
+    if (hay.includes('nixos') || hay.includes('/modules/')) return 'NixOS';
+    return 'Modular services';
+  }
+
+  async function loadOptions(version) {
+    loading = true;
+    error = '';
+    expandedTitle = null;
+
+    try {
+      const res = await fetch(`/data/options-${version}.json`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      options = (data.options || []).map((o) => ({ ...o, source: detectSource(o) }));
+      lastUpdate = data.last_update || '';
+      expandedTitle = options[0]?.title ?? null;
+    } catch (e) {
+      options = [];
+      error = `Failed to load /data/options-${version}.json (${e.message})`;
+    } finally {
+      loading = false;
+    }
+  }
 
   function selectVersion(version) {
     selectedVersion = version;
-  }
-
-  function selectSource(sourceName) {
-    selectedSource = sourceName;
+    loadOptions(version);
   }
 
   function toggleOption(title) {
     expandedTitle = expandedTitle === title ? null : title;
   }
+
+  $: filtered = options
+    .filter((o) => o.source === selectedSource)
+    .filter((o) => o.title.toLowerCase().includes(query.trim().toLowerCase()))
+    .slice(0, 50);
+
+  $: totalInSource = options.filter((o) => o.source === selectedSource).length;
+
+  onMount(() => {
+    loadOptions(selectedVersion);
+  });
 </script>
 
 <div class="page">
   <main class="container">
     <div class="search-row">
-      <input value={query} />
-      <button>Search</button>
+      <input bind:value={query} placeholder="Search options..." />
+      <button type="button">Search</button>
     </div>
 
     <div class="channels">
@@ -82,41 +98,48 @@
         {#each sources as source}
           <button
             type="button"
-            class="source-row {selectedSource === source.name ? 'active' : ''}"
-            aria-pressed={selectedSource === source.name}
-            on:click={() => selectSource(source.name)}
+            class="source-row {selectedSource === source ? 'active' : ''}"
+            aria-pressed={selectedSource === source}
+            on:click={() => (selectedSource = source)}
           >
-            <span>{source.name}</span>
-            <span class="badge">{source.count}</span>
+            <span>{source}</span>
+            <span class="badge">{sourceBadge[source]}</span>
           </button>
         {/each}
       </aside>
 
       <div class="results">
         <div class="result-header">
-          <h2>Showing results 1-50 of <strong>1036 options.</strong></h2>
-          <button class="sort">Sort: Best match ▾</button>
+          <h2>Showing results 1-{filtered.length} of <strong>{totalInSource} options.</strong></h2>
+          <button class="sort" type="button">Sort: Best match ▾</button>
         </div>
-        <p class="meta">Data from nixpkgs <code>d7a713c0</code>.</p>
+        <p class="meta">
+          {#if lastUpdate}Data updated {lastUpdate}. {/if}
+          {#if loading}Loading...{/if}
+          {#if error}{error}{/if}
+        </p>
 
         <ul>
-          {#each results as result}
+          {#each filtered as option}
             <li>
               <a
                 href="#"
-                on:click|preventDefault={() => toggleOption(result.title)}
-                aria-expanded={expandedTitle === result.title}
+                on:click|preventDefault={() => toggleOption(option.title)}
+                aria-expanded={expandedTitle === option.title}
               >
-                {result.title}
+                {option.title}
               </a>
 
-              {#if expandedTitle === result.title}
+              {#if expandedTitle === option.title}
                 <div class="details">
-                  <div class="detail-row"><span>Name</span><code>{result.title}</code></div>
-                  <div class="detail-row"><span>Description</span><p>{result.description}</p></div>
-                  <div class="detail-row"><span>Type</span><p>{result.type}</p></div>
-                  <div class="detail-row"><span>Default</span><code>{result.defaultValue}</code></div>
-                  <div class="detail-row"><span>Declared in</span><a href="#">{result.declaredIn}</a></div>
+                  <div class="detail-row"><span>Name</span><code>{option.title}</code></div>
+                  <div class="detail-row"><span>Description</span><p>{option.description || '-'}</p></div>
+                  <div class="detail-row"><span>Type</span><p>{option.type || '-'}</p></div>
+                  <div class="detail-row"><span>Default</span><code>{option.default || '-'}</code></div>
+                  <div class="detail-row">
+                    <span>Declared in</span>
+                    <a href={option.declarations?.[0]?.url || '#'}>{option.declarations?.[0]?.name || '-'}</a>
+                  </div>
                 </div>
               {/if}
             </li>

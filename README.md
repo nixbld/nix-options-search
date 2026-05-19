@@ -5,6 +5,7 @@ Reusable Nix building blocks for:
 - `lib.mkModuleDocs`
 - `lib.mkOptionSearchSite`
 - `lib.mkNamespaceFilter`
+- `lib.mkSvelteFrontend`
 - examples under `./examples`
 
 ## Usage
@@ -33,6 +34,26 @@ Reusable Nix building blocks for:
     };
   };
 }
+```
+
+## Svelte frontend package
+
+This flake now exposes:
+
+- `packages.x86_64-linux.svelte-frontend`
+- `packages.x86_64-linux.svelte-frontend-with-data`
+
+And a reusable builder:
+
+```nix
+mkSvelteFrontend = nix-options-search.lib.mkSvelteFrontend { inherit pkgs; };
+frontend = mkSvelteFrontend {
+  npmDepsHash = "sha256-MiK7O2dV35Ro1shjtrcnRinVS/31yKGTl5Jlfg+Po+M=";
+  optionsData = {
+    "25.11" = ./options-25.11.json;
+    unstable = ./options-unstable.json;
+  };
+};
 ```
 
 ## Credits
