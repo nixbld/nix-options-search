@@ -132,6 +132,22 @@
     expandedTitles = new Set(expandedTitles);
   }
 
+  function expandVisible() {
+    expandedTitles = new Set(filtered.map((option) => option.title));
+  }
+
+  function collapseVisible() {
+    expandedTitles = new Set();
+  }
+
+  function declarationOf(option) {
+    return option.declarations?.[0] || null;
+  }
+
+  function allVisibleExpanded() {
+    return filtered.length > 0 && filtered.every((option) => expandedTitles.has(option.title));
+  }
+
   $: availableVersions = versionsForSource(selectedSource);
   $: selectedVersion = availableVersions.includes(selectedVersion)
     ? selectedVersion
@@ -208,21 +224,44 @@
       <div class="results">
         <div class="result-header">
           <h2>Showing results {startIndex}-{endIndex} of <strong>{totalFiltered} options.</strong></h2>
-          <button class="sort" type="button">Sort: Best match ▾</button>
+          <div class="result-actions">
+            <button class="sort" type="button" on:click={() => (allVisibleExpanded() ? collapseVisible() : expandVisible())}>
+              {allVisibleExpanded() ? 'Collapse page' : 'Expand page'}
+            </button>
+          </div>
         </div>
         <p class="meta">{#if lastUpdate}Data updated {lastUpdate}. {/if}{#if loading}Loading...{/if}{#if error}{error}{/if}</p>
 
         <ul>
           {#each filtered as option}
             <li>
-              <a href="#" on:click|preventDefault={() => toggleOption(option.title)}>{option.title}</a>
+              <button class="option-link" type="button" on:click={() => toggleOption(option.title)}>{option.title}</button>
               {#if expandedTitles.has(option.title)}
-                <div class="details">
-                  <div class="detail-row"><span>Name</span><code>{option.title}</code></div>
-                  <div class="detail-row"><span>Description</span><p>{option.description || '-'}</p></div>
-                  <div class="detail-row"><span>Type</span><p>{option.type || '-'}</p></div>
-                  <div class="detail-row"><span>Default</span><code>{option.default || '-'}</code></div>
-                  <div class="detail-row"><span>Declared in</span><a href={option.declarations?.[0]?.url || '#'}>{option.declarations?.[0]?.name || '-'}</a></div>
+                <div class="details compact-details">
+                  <div class="option-summary">
+                    <code class="option-name">{option.title}</code>
+                    {#if option.default}
+                      <span class="option-equals">=</span>
+                      <code class="option-value">{option.default}</code>
+                    {/if}
+                    {#if option.type}
+                      <span class="option-type">({option.type})</span>
+                    {/if}
+                    {#if declarationOf(option)?.url}
+                      <a
+                        class="declared-link"
+                        href={declarationOf(option).url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={`Declared in ${declarationOf(option).name || declarationOf(option).url}`}
+                        aria-label={`Declared in ${declarationOf(option).name || declarationOf(option).url}`}
+                        on:click|stopPropagation
+                      >↗</a>
+                    {/if}
+                  </div>
+                  {#if option.description}
+                    <p class="option-description">{option.description}</p>
+                  {/if}
                 </div>
               {/if}
             </li>
