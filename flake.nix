@@ -6,13 +6,17 @@
     nixpkgs-25_11.url = "github:nixos/nixpkgs/nixos-25.11";
     home-manager.url = "github:nix-community/home-manager/master";
     home-manager-25_11.url = "github:nix-community/home-manager/release-25.11";
+    impermanence = {
+      url = "github:nix-community/impermanence";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     agentspace = {
       url = "github:shazow/agentspace";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = { nixpkgs, nixpkgs-25_11, home-manager, home-manager-25_11, agentspace, ... }:
+  outputs = { nixpkgs, nixpkgs-25_11, home-manager, home-manager-25_11, impermanence, agentspace, ... }:
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
@@ -39,6 +43,27 @@
 
       homeManagerOptionsUnstable = "${home-manager.packages.${system}.docs-json}/share/doc/home-manager/options.json";
       homeManagerOptions25 = "${home-manager-25_11.packages.${system}.docs-json}/share/doc/home-manager/options.json";
+
+      docsImpermanenceUnstable = (mkModuleDocs { inherit pkgs; }) {
+        modules = [ impermanence.nixosModules.impermanence ];
+        class = "nixos";
+        # Impermanence reuses the NixOS module system, so filter to its own option tree.
+        filterOption = path: _:
+          let
+            prefixes = [
+              [ "environment" "persistence" ]
+              [ "home" "persistence" ]
+            ];
+            matches = prefix:
+              let
+                n = builtins.length prefix;
+                m = builtins.length path;
+              in
+              (n <= m && pkgs.lib.take n path == prefix)
+              || (m < n && pkgs.lib.take m prefix == path);
+          in
+          builtins.any matches prefixes;
+      };
 
       docsAgentSpaceUnstable = (mkModuleDocs { inherit pkgs; }) {
         modules = [
@@ -75,6 +100,12 @@
         sourceName = "Home Manager";
       };
 
+      dataImpermanenceUnstable = (mkOptionsData { inherit pkgs; }) {
+        moduleDocs = docsImpermanenceUnstable;
+        releaseName = "unstable";
+        sourceName = "Impermanence";
+      };
+
       dataAgentSpaceUnstable = (mkOptionsData { inherit pkgs; }) {
         moduleDocs = docsAgentSpaceUnstable;
         releaseName = "unstable";
@@ -96,6 +127,7 @@
           { source = "NixOS"; version = "25.11"; path = "${dataNixos25}/options-25.11.json"; }
           { source = "Home Manager"; version = "unstable"; path = "${dataHomeManagerUnstable}/options-unstable.json"; }
           { source = "Home Manager"; version = "25.11"; path = "${dataHomeManager25}/options-25.11.json"; }
+          { source = "Impermanence"; version = "unstable"; path = "${dataImpermanenceUnstable}/options-unstable.json"; }
           { source = "AgentSpace"; version = "unstable"; path = "${dataAgentSpaceUnstable}/options-unstable.json"; }
         ];
       };
@@ -108,6 +140,7 @@
           { source = "NixOS"; version = "25.11"; path = "${dataNixos25}/options-25.11.json"; }
           { source = "Home Manager"; version = "unstable"; path = "${dataHomeManagerUnstable}/options-unstable.json"; }
           { source = "Home Manager"; version = "25.11"; path = "${dataHomeManager25}/options-25.11.json"; }
+          { source = "Impermanence"; version = "unstable"; path = "${dataImpermanenceUnstable}/options-unstable.json"; }
           { source = "AgentSpace"; version = "unstable"; path = "${dataAgentSpaceUnstable}/options-unstable.json"; }
         ];
       };
