@@ -1,5 +1,5 @@
 { pkgs, lib ? pkgs.lib }:
-{ includeNamespaces, excludeNamespaces ? [ ] }:
+{ includeNamespaces, excludeNamespaces ? [ ], excludeExactNamespaces ? [ ] }:
 let
   normalizePath =
     path:
@@ -10,6 +10,7 @@ let
 
   includePaths = map normalizePath includeNamespaces;
   excludePaths = map normalizePath excludeNamespaces;
+  excludeExactPaths = map normalizePath excludeExactNamespaces;
 
   pathIsPrefixOf =
     prefix: path:
@@ -28,6 +29,9 @@ let
 
   pathMatchesExclude = path:
     builtins.any (excludePath: pathIsPrefixOf excludePath path) excludePaths;
+
+  pathMatchesExactExclude = path:
+    builtins.any (excludePath: path == excludePath) excludeExactPaths;
 in
 path: _node:
-  pathMatchesInclude path && !pathMatchesExclude path
+  pathMatchesInclude path && !pathMatchesExclude path && !pathMatchesExactExclude path

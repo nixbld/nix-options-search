@@ -14,13 +14,17 @@
       url = "github:nix-community/ethereum.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nixvim = {
+      url = "github:nix-community/nixvim";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     agentspace = {
       url = "github:shazow/agentspace";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = { nixpkgs, nixpkgs-25_11, home-manager, home-manager-25_11, impermanence, ethereumNix, agentspace, ... }:
+  outputs = { nixpkgs, nixpkgs-25_11, home-manager, home-manager-25_11, impermanence, ethereumNix, nixvim, agentspace, ... }:
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
@@ -117,6 +121,12 @@
         sourceName = "ethereum.nix";
       };
 
+      dataNixvimUnstable = (mkOptionsData { inherit pkgs; }) {
+        optionsJSONFile = "${nixvim.packages.${system}.options-json}/share/doc/nixos/options.json";
+        releaseName = "unstable";
+        sourceName = "Nixvim";
+      };
+
       dataAgentSpaceUnstable = (mkOptionsData { inherit pkgs; }) {
         moduleDocs = docsAgentSpaceUnstable;
         releaseName = "unstable";
@@ -140,6 +150,7 @@
           { source = "Home Manager"; version = "25.11"; path = "${dataHomeManager25}/options-25.11.json"; }
           { source = "Impermanence"; version = "unstable"; path = "${dataImpermanenceUnstable}/options-unstable.json"; }
           { source = "ethereum.nix"; version = "unstable"; path = "${dataEthereumNixUnstable}/options-unstable.json"; }
+          { source = "Nixvim"; version = "unstable"; path = "${dataNixvimUnstable}/options-unstable.json"; }
           { source = "AgentSpace"; version = "unstable"; path = "${dataAgentSpaceUnstable}/options-unstable.json"; }
         ];
       };
@@ -154,6 +165,7 @@
           { source = "Home Manager"; version = "25.11"; path = "${dataHomeManager25}/options-25.11.json"; }
           { source = "Impermanence"; version = "unstable"; path = "${dataImpermanenceUnstable}/options-unstable.json"; }
           { source = "ethereum.nix"; version = "unstable"; path = "${dataEthereumNixUnstable}/options-unstable.json"; }
+          { source = "Nixvim"; version = "unstable"; path = "${dataNixvimUnstable}/options-unstable.json"; }
           { source = "AgentSpace"; version = "unstable"; path = "${dataAgentSpaceUnstable}/options-unstable.json"; }
         ];
       };
