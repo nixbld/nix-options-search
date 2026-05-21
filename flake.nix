@@ -18,13 +18,17 @@
       url = "github:nix-community/nixvim";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    microvmNix = {
+      url = "github:microvm-nix/microvm.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     agentspace = {
       url = "github:shazow/agentspace";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = { nixpkgs, nixpkgs-25_11, home-manager, home-manager-25_11, impermanence, ethereumNix, nixvim, agentspace, ... }:
+  outputs = { nixpkgs, nixpkgs-25_11, home-manager, home-manager-25_11, impermanence, ethereumNix, nixvim, microvmNix, agentspace, ... }:
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
@@ -74,6 +78,25 @@
         };
       };
 
+      docsNixvimUnstable = (mkModuleDocs { inherit pkgs; }) {
+        modules = [ nixvim.nixosModules.nixvim ];
+        class = "nixos";
+        # nixvim exposes a shared programs.nixvim subtree; use the packaged options.json.
+        filterOption = mkNamespaceFilter {
+          includeNamespaces = [ [ "programs" "nixvim" ] ];
+          excludeExactNamespaces = [ [ "programs" "nixvim" ] ];
+        };
+      };
+
+      docsMicrovmNixUnstable = (mkModuleDocs { inherit pkgs; }) {
+        modules = [ microvmNix.nixosModules.microvm ];
+        class = "nixos";
+        # microvm.nix options live under the microvm.* namespace.
+        filterOption = mkNamespaceFilter {
+          includeNamespaces = [ [ "microvm" ] ];
+        };
+      };
+
       docsAgentSpaceUnstable = (mkModuleDocs { inherit pkgs; }) {
         modules = [
           agentspace.inputs.microvm.nixosModules.microvm
@@ -115,6 +138,12 @@
         sourceName = "Impermanence";
       };
 
+      dataMicrovmNixUnstable = (mkOptionsData { inherit pkgs; }) {
+        moduleDocs = docsMicrovmNixUnstable;
+        releaseName = "unstable";
+        sourceName = "microvm.nix";
+      };
+
       dataEthereumNixUnstable = (mkOptionsData { inherit pkgs; }) {
         moduleDocs = docsEthereumNixUnstable;
         releaseName = "unstable";
@@ -149,6 +178,7 @@
           { source = "Home Manager"; version = "unstable"; path = "${dataHomeManagerUnstable}/options-unstable.json"; }
           { source = "Home Manager"; version = "25.11"; path = "${dataHomeManager25}/options-25.11.json"; }
           { source = "Impermanence"; version = "unstable"; path = "${dataImpermanenceUnstable}/options-unstable.json"; }
+          { source = "microvm.nix"; version = "unstable"; path = "${dataMicrovmNixUnstable}/options-unstable.json"; }
           { source = "ethereum.nix"; version = "unstable"; path = "${dataEthereumNixUnstable}/options-unstable.json"; }
           { source = "Nixvim"; version = "unstable"; path = "${dataNixvimUnstable}/options-unstable.json"; }
           { source = "AgentSpace"; version = "unstable"; path = "${dataAgentSpaceUnstable}/options-unstable.json"; }
@@ -164,6 +194,7 @@
           { source = "Home Manager"; version = "unstable"; path = "${dataHomeManagerUnstable}/options-unstable.json"; }
           { source = "Home Manager"; version = "25.11"; path = "${dataHomeManager25}/options-25.11.json"; }
           { source = "Impermanence"; version = "unstable"; path = "${dataImpermanenceUnstable}/options-unstable.json"; }
+          { source = "microvm.nix"; version = "unstable"; path = "${dataMicrovmNixUnstable}/options-unstable.json"; }
           { source = "ethereum.nix"; version = "unstable"; path = "${dataEthereumNixUnstable}/options-unstable.json"; }
           { source = "Nixvim"; version = "unstable"; path = "${dataNixvimUnstable}/options-unstable.json"; }
           { source = "AgentSpace"; version = "unstable"; path = "${dataAgentSpaceUnstable}/options-unstable.json"; }
