@@ -129,7 +129,7 @@
         modules = [
           agentspace.inputs.microvm.nixosModules.microvm
           agentspace.inputs.home-manager.nixosModules.home-manager
-          (import "${agentspace.outPath}/sandbox-qemu.nix")
+          agentspace.nixosModules.default
         ];
         class = "nixos";
         filterOption = path: _:
@@ -240,6 +240,7 @@
         ];
         declarationUrlOverrides = {
           "https://github.com/nixbld/nix-options-search/blob/main/lib/mkModuleDocs.nix" = "https://github.com/shazow/agentspace/blob/${agentspace.sourceInfo.rev}/sandbox-qemu.nix";
+          "https://github.com/microvm-nix/microvm.nix/blob/${agentspace.inputs.microvm.sourceInfo.rev}/nixos-modules/microvm/options.nix" = "https://github.com/shazow/agentspace/blob/${agentspace.sourceInfo.rev}/sandbox-qemu.nix";
         };
       };
 

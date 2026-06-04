@@ -34,7 +34,7 @@ jobs:
         uses: DeterminateSystems/magic-nix-cache-action@v8
 
       - name: Run ci checks
-        run: nix shell nixpkgs#just --command just ci
+        run: nix shell nixpkgs#just nixpkgs#jq --command just ci
 
       - name: Prepare publish dir
         run: |

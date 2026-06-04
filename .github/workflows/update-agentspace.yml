@@ -41,7 +41,7 @@ jobs:
 
       - name: Run ci checks
         if: steps.changes.outputs.changed == 'true'
-        run: nix shell nixpkgs#just --command just ci
+        run: nix shell nixpkgs#just nixpkgs#jq --command just ci
 
       - name: Prepare publish dir
         if: steps.changes.outputs.changed == 'true'
