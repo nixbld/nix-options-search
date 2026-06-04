@@ -5,6 +5,7 @@
   releaseName,
   sourceName ? "NixOS",
   declarationUrlPrefixes ? { },
+  declarationUrlOverrides ? { },
 }:
 let
   inputFile =
@@ -32,6 +33,7 @@ out = Path(sys.argv[1])
 infile = Path(sys.argv[2])
 raw = json.loads(infile.read_text())
 declarationUrlPrefixes = json.loads(${builtins.toJSON (builtins.toJSON declarationUrlPrefixes)})
+declarationUrlOverrides = json.loads(${builtins.toJSON (builtins.toJSON declarationUrlOverrides)})
 
 options = []
 for title in sorted(raw.keys()):
@@ -62,6 +64,7 @@ for title in sorted(raw.keys()):
                 url = replacement + url[len(prefix):]
                 break
 
+        url = declarationUrlOverrides.get(url, url)
         declarations.append({'name': name, 'url': url})
 
     options.append({

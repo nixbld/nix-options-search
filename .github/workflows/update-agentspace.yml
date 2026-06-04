@@ -39,9 +39,9 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Build site
+      - name: Run ci checks
         if: steps.changes.outputs.changed == 'true'
-        run: nix build .#svelte-frontend-with-data-pages
+        run: nix shell nixpkgs#just --command just ci
 
       - name: Prepare publish dir
         if: steps.changes.outputs.changed == 'true'

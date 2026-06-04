@@ -168,7 +168,8 @@
         releaseName = "unstable";
         sourceName = "Home Manager";
         declarationUrlPrefixes = commonDeclarationPrefixes // mkGitHubDeclarationPrefixes [
-          { input = home-manager; repo = "NixOS/home-manager"; }
+          { input = home-manager; repo = "nix-community/home-manager"; }
+          { input = home-manager.inputs.nixpkgs; repo = "NixOS/nixpkgs"; }
         ];
       };
 
@@ -177,7 +178,8 @@
         releaseName = "25.11";
         sourceName = "Home Manager";
         declarationUrlPrefixes = commonDeclarationPrefixes // mkGitHubDeclarationPrefixes [
-          { input = home-manager-25_11; repo = "NixOS/home-manager"; }
+          { input = home-manager-25_11; repo = "nix-community/home-manager"; }
+          { input = home-manager-25_11.inputs.nixpkgs; repo = "NixOS/nixpkgs"; }
         ];
       };
 
@@ -186,7 +188,8 @@
         releaseName = "26.05";
         sourceName = "Home Manager";
         declarationUrlPrefixes = commonDeclarationPrefixes // mkGitHubDeclarationPrefixes [
-          { input = home-manager-26_05; repo = "NixOS/home-manager"; }
+          { input = home-manager-26_05; repo = "nix-community/home-manager"; }
+          { input = home-manager-26_05.inputs.nixpkgs; repo = "NixOS/nixpkgs"; }
         ];
       };
 
@@ -233,8 +236,11 @@
         declarationUrlPrefixes = commonDeclarationPrefixes // mkGitHubDeclarationPrefixes [
           { input = agentspace; repo = "shazow/agentspace"; }
           { input = agentspace.inputs.microvm; repo = "microvm-nix/microvm.nix"; }
-          { input = agentspace.inputs.home-manager; repo = "NixOS/home-manager"; }
+          { input = agentspace.inputs.home-manager; repo = "nix-community/home-manager"; }
         ];
+        declarationUrlOverrides = {
+          "https://github.com/nixbld/nix-options-search/blob/main/lib/mkModuleDocs.nix" = "https://github.com/shazow/agentspace/blob/${agentspace.sourceInfo.rev}/sandbox-qemu.nix";
+        };
       };
 
       docsDevenvUnstable = (mkModuleDocs { inherit pkgs; }) {
