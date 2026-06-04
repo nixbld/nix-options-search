@@ -26,9 +26,17 @@
       url = "github:shazow/agentspace";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    gitHooks = {
+      url = "github:cachix/git-hooks.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    devenv = {
+      url = "github:cachix/devenv";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { nixpkgs, nixpkgs-25_11, home-manager, home-manager-25_11, impermanence, ethereumNix, nixvim, microvmNix, agentspace, ... }:
+  outputs = { nixpkgs, nixpkgs-25_11, home-manager, home-manager-25_11, impermanence, ethereumNix, nixvim, microvmNix, agentspace, gitHooks, devenv, ... }:
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
@@ -162,6 +170,20 @@
         sourceName = "AgentSpace";
       };
 
+      docsDevenvUnstable = (mkModuleDocs { inherit pkgs; }) {
+        modules = [ (devenv.modules + /top-level.nix) ];
+        class = "devenv";
+        specialArgs = {
+          self = devenv;
+          inputs = { "git-hooks" = gitHooks; };
+        };
+      };
+
+      dataDevenvUnstable = (mkOptionsData { inherit pkgs; }) {
+        moduleDocs = docsDevenvUnstable;
+        releaseName = "unstable";
+        sourceName = "devenv";
+      };
 
       svelteFrontend = (mkSvelteFrontend { inherit pkgs; }) {
         npmDepsHash = "sha256-MiK7O2dV35Ro1shjtrcnRinVS/31yKGTl5Jlfg+Po+M=";
@@ -182,6 +204,7 @@
           { source = "ethereum.nix"; version = "unstable"; path = "${dataEthereumNixUnstable}/options-unstable.json"; }
           { source = "Nixvim"; version = "unstable"; path = "${dataNixvimUnstable}/options-unstable.json"; }
           { source = "AgentSpace"; version = "unstable"; path = "${dataAgentSpaceUnstable}/options-unstable.json"; }
+          { source = "devenv"; version = "unstable"; path = "${dataDevenvUnstable}/options-unstable.json"; }
         ];
       };
 
@@ -198,6 +221,7 @@
           { source = "ethereum.nix"; version = "unstable"; path = "${dataEthereumNixUnstable}/options-unstable.json"; }
           { source = "Nixvim"; version = "unstable"; path = "${dataNixvimUnstable}/options-unstable.json"; }
           { source = "AgentSpace"; version = "unstable"; path = "${dataAgentSpaceUnstable}/options-unstable.json"; }
+          { source = "devenv"; version = "unstable"; path = "${dataDevenvUnstable}/options-unstable.json"; }
         ];
       };
 
