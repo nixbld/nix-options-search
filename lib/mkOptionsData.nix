@@ -4,6 +4,7 @@
   optionsJSONFile ? null,
   releaseName,
   sourceName ? "NixOS",
+  declarationUrlPrefixes ? { },
 }:
 let
   inputFile =
@@ -30,6 +31,7 @@ from pathlib import Path
 out = Path(sys.argv[1])
 infile = Path(sys.argv[2])
 raw = json.loads(infile.read_text())
+declarationUrlPrefixes = json.loads(${builtins.toJSON (builtins.toJSON declarationUrlPrefixes)})
 
 options = []
 for title in sorted(raw.keys()):
@@ -54,6 +56,12 @@ for title in sorted(raw.keys()):
         else:
             name = str(decl)
             url = "file://" + name if name.startswith('/') else name
+
+        for prefix, replacement in sorted(declarationUrlPrefixes.items(), key=lambda item: len(item[0]), reverse=True):
+            if url.startswith(prefix):
+                url = replacement + url[len(prefix):]
+                break
+
         declarations.append({'name': name, 'url': url})
 
     options.append({

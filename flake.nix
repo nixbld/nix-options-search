@@ -36,7 +36,7 @@
     };
   };
 
-  outputs = { nixpkgs, nixpkgs-25_11, home-manager, home-manager-25_11, impermanence, ethereumNix, nixvim, microvmNix, agentspace, gitHooks, devenv, ... }:
+  outputs = { self, nixpkgs, nixpkgs-25_11, home-manager, home-manager-25_11, impermanence, ethereumNix, nixvim, microvmNix, agentspace, gitHooks, devenv, ... }:
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
@@ -48,6 +48,16 @@
       mkSvelteFrontend = import ./lib/mkSvelteFrontend.nix;
       mkOptionsData = import ./lib/mkOptionsData.nix;
       mkMergeOptionsData = import ./lib/mkMergeOptionsData.nix;
+
+      mkGitHubDeclarationPrefixes = specs:
+        builtins.listToAttrs (map (spec: {
+          name = "file://${builtins.unsafeDiscardStringContext spec.input.outPath}/";
+          value = "https://github.com/${spec.repo}/blob/${spec.rev or spec.input.sourceInfo.rev or "main"}/";
+        }) specs);
+
+      commonDeclarationPrefixes = {
+        "file://${builtins.unsafeDiscardStringContext self.outPath}/" = "https://github.com/nixbld/nix-options-search/blob/main/";
+      };
 
       nixosModulesUnstable = import (pkgs.path + "/nixos/modules/module-list.nix");
       nixosModules25 = import (pkgs25.path + "/nixos/modules/module-list.nix");
@@ -120,54 +130,83 @@
         moduleDocs = docsNixosUnstable;
         releaseName = "unstable";
         sourceName = "NixOS";
+        declarationUrlPrefixes = commonDeclarationPrefixes // mkGitHubDeclarationPrefixes [
+          { input = nixpkgs; repo = "NixOS/nixpkgs"; }
+        ];
       };
 
       dataNixos25 = (mkOptionsData { inherit pkgs; }) {
         moduleDocs = docsNixos25;
         releaseName = "25.11";
         sourceName = "NixOS";
+        declarationUrlPrefixes = commonDeclarationPrefixes // mkGitHubDeclarationPrefixes [
+          { input = nixpkgs-25_11; repo = "NixOS/nixpkgs"; }
+        ];
       };
 
       dataHomeManagerUnstable = (mkOptionsData { inherit pkgs; }) {
         optionsJSONFile = homeManagerOptionsUnstable;
         releaseName = "unstable";
         sourceName = "Home Manager";
+        declarationUrlPrefixes = commonDeclarationPrefixes // mkGitHubDeclarationPrefixes [
+          { input = home-manager; repo = "NixOS/home-manager"; }
+        ];
       };
 
       dataHomeManager25 = (mkOptionsData { inherit pkgs; }) {
         optionsJSONFile = homeManagerOptions25;
         releaseName = "25.11";
         sourceName = "Home Manager";
+        declarationUrlPrefixes = commonDeclarationPrefixes // mkGitHubDeclarationPrefixes [
+          { input = home-manager-25_11; repo = "NixOS/home-manager"; }
+        ];
       };
 
       dataImpermanenceUnstable = (mkOptionsData { inherit pkgs; }) {
         moduleDocs = docsImpermanenceUnstable;
         releaseName = "unstable";
         sourceName = "Impermanence";
+        declarationUrlPrefixes = commonDeclarationPrefixes // mkGitHubDeclarationPrefixes [
+          { input = impermanence; repo = "nix-community/impermanence"; }
+        ];
       };
 
       dataMicrovmNixUnstable = (mkOptionsData { inherit pkgs; }) {
         moduleDocs = docsMicrovmNixUnstable;
         releaseName = "unstable";
         sourceName = "microvm.nix";
+        declarationUrlPrefixes = commonDeclarationPrefixes // mkGitHubDeclarationPrefixes [
+          { input = microvmNix; repo = "microvm-nix/microvm.nix"; }
+        ];
       };
 
       dataEthereumNixUnstable = (mkOptionsData { inherit pkgs; }) {
         moduleDocs = docsEthereumNixUnstable;
         releaseName = "unstable";
         sourceName = "ethereum.nix";
+        declarationUrlPrefixes = commonDeclarationPrefixes // mkGitHubDeclarationPrefixes [
+          { input = ethereumNix; repo = "nix-community/ethereum.nix"; }
+        ];
       };
 
       dataNixvimUnstable = (mkOptionsData { inherit pkgs; }) {
         optionsJSONFile = "${nixvim.packages.${system}.options-json}/share/doc/nixos/options.json";
         releaseName = "unstable";
         sourceName = "Nixvim";
+        declarationUrlPrefixes = commonDeclarationPrefixes // mkGitHubDeclarationPrefixes [
+          { input = nixvim; repo = "nix-community/nixvim"; }
+        ];
       };
 
       dataAgentSpaceUnstable = (mkOptionsData { inherit pkgs; }) {
         moduleDocs = docsAgentSpaceUnstable;
         releaseName = "unstable";
         sourceName = "AgentSpace";
+        declarationUrlPrefixes = commonDeclarationPrefixes // mkGitHubDeclarationPrefixes [
+          { input = agentspace; repo = "shazow/agentspace"; }
+          { input = agentspace.inputs.microvm; repo = "microvm-nix/microvm.nix"; }
+          { input = agentspace.inputs.home-manager; repo = "NixOS/home-manager"; }
+        ];
       };
 
       docsDevenvUnstable = (mkModuleDocs { inherit pkgs; }) {
@@ -183,6 +222,10 @@
         moduleDocs = docsDevenvUnstable;
         releaseName = "unstable";
         sourceName = "devenv";
+        declarationUrlPrefixes = commonDeclarationPrefixes // mkGitHubDeclarationPrefixes [
+          { input = devenv; repo = "cachix/devenv"; }
+          { input = gitHooks; repo = "cachix/git-hooks.nix"; }
+        ];
       };
 
       svelteFrontend = (mkSvelteFrontend { inherit pkgs; }) {
