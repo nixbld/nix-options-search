@@ -21,8 +21,11 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v16
 
-      - name: Build site without substitutes
-        run: nix build --no-substitute .#svelte-frontend-with-data-pages
+      - name: Use Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Build site
+        run: nix shell nixpkgs#just --command just build-site
 
       - name: Verify declaration links
         run: nix shell nixpkgs#just nixpkgs#jq --command just verify-declaration-links
