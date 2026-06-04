@@ -1,5 +1,7 @@
 # nix-options-search
 
+## Library
+
 Reusable Nix building blocks for:
 
 - `lib.mkModuleDocs`
@@ -10,7 +12,7 @@ Reusable Nix building blocks for:
 - `lib.mkMergeOptionsData`
 - examples under `./examples`
 
-## Usage
+### Usage
 
 ```nix
 {
@@ -38,7 +40,7 @@ Reusable Nix building blocks for:
 }
 ```
 
-## Svelte frontend package
+### Svelte frontend package
 
 This flake now exposes:
 
@@ -64,6 +66,22 @@ The flake also exposes an app to serve the built frontend on port `4445`:
 ```bash
 nix run .#serve-svelte-frontend
 ```
+
+## Hosted site
+
+Option search site: http://nixbld.github.io/nix-options-search/
+
+Supported sources:
+- [NixOS](https://github.com/NixOS/nixpkgs)
+- [Home Manager](https://github.com/nix-community/home-manager)
+- [Impermanence](https://github.com/nix-community/impermanence)
+- [microvm.nix](https://github.com/microvm-nix/microvm.nix)
+- [ethereum.nix](https://github.com/nix-community/ethereum.nix)
+- [Nixvim](https://github.com/nix-community/nixvim)
+- [AgentSpace](https://github.com/shazow/agentspace)
+- [devenv](https://github.com/cachix/devenv)
+
+New sources are always welcome.
 
 ## Attribution
 
