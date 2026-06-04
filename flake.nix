@@ -4,8 +4,10 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     nixpkgs-25_11.url = "github:nixos/nixpkgs/nixos-25.11";
+    nixpkgs-26_05.url = "github:nixos/nixpkgs/nixos-26.05";
     home-manager.url = "github:nix-community/home-manager/master";
     home-manager-25_11.url = "github:nix-community/home-manager/release-25.11";
+    home-manager-26_05.url = "github:nix-community/home-manager/release-26.05";
     impermanence = {
       url = "github:nix-community/impermanence";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -36,11 +38,12 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-25_11, home-manager, home-manager-25_11, impermanence, ethereumNix, nixvim, microvmNix, agentspace, gitHooks, devenv, ... }:
+  outputs = { self, nixpkgs, nixpkgs-25_11, nixpkgs-26_05, home-manager, home-manager-25_11, home-manager-26_05, impermanence, ethereumNix, nixvim, microvmNix, agentspace, gitHooks, devenv, ... }:
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
       pkgs25 = nixpkgs-25_11.legacyPackages.${system};
+      pkgs26 = nixpkgs-26_05.legacyPackages.${system};
 
       mkModuleDocs = import ./lib/mkModuleDocs.nix;
       mkOptionSearchSite = import ./lib/mkOptionSearchSite.nix;
@@ -61,6 +64,7 @@
 
       nixosModulesUnstable = import (pkgs.path + "/nixos/modules/module-list.nix");
       nixosModules25 = import (pkgs25.path + "/nixos/modules/module-list.nix");
+      nixosModules26 = import (pkgs26.path + "/nixos/modules/module-list.nix");
 
       docsNixosUnstable = (mkModuleDocs { inherit pkgs; }) {
         modules = nixosModulesUnstable;
@@ -72,8 +76,14 @@
         class = "nixos";
       };
 
+      docsNixos26 = (mkModuleDocs { pkgs = pkgs26; }) {
+        modules = nixosModules26;
+        class = "nixos";
+      };
+
       homeManagerOptionsUnstable = "${home-manager.packages.${system}.docs-json}/share/doc/home-manager/options.json";
       homeManagerOptions25 = "${home-manager-25_11.packages.${system}.docs-json}/share/doc/home-manager/options.json";
+      homeManagerOptions26 = "${home-manager-26_05.packages.${system}.docs-json}/share/doc/home-manager/options.json";
 
       docsImpermanenceUnstable = (mkModuleDocs { inherit pkgs; }) {
         modules = [ impermanence.nixosModules.impermanence ];
@@ -144,6 +154,15 @@
         ];
       };
 
+      dataNixos26 = (mkOptionsData { inherit pkgs; }) {
+        moduleDocs = docsNixos26;
+        releaseName = "26.05";
+        sourceName = "NixOS";
+        declarationUrlPrefixes = commonDeclarationPrefixes // mkGitHubDeclarationPrefixes [
+          { input = nixpkgs-26_05; repo = "NixOS/nixpkgs"; }
+        ];
+      };
+
       dataHomeManagerUnstable = (mkOptionsData { inherit pkgs; }) {
         optionsJSONFile = homeManagerOptionsUnstable;
         releaseName = "unstable";
@@ -159,6 +178,15 @@
         sourceName = "Home Manager";
         declarationUrlPrefixes = commonDeclarationPrefixes // mkGitHubDeclarationPrefixes [
           { input = home-manager-25_11; repo = "NixOS/home-manager"; }
+        ];
+      };
+
+      dataHomeManager26 = (mkOptionsData { inherit pkgs; }) {
+        optionsJSONFile = homeManagerOptions26;
+        releaseName = "26.05";
+        sourceName = "Home Manager";
+        declarationUrlPrefixes = commonDeclarationPrefixes // mkGitHubDeclarationPrefixes [
+          { input = home-manager-26_05; repo = "NixOS/home-manager"; }
         ];
       };
 
@@ -240,8 +268,10 @@
         optionsDatasets = [
           { source = "NixOS"; version = "unstable"; path = "${dataNixosUnstable}/options-unstable.json"; }
           { source = "NixOS"; version = "25.11"; path = "${dataNixos25}/options-25.11.json"; }
+          { source = "NixOS"; version = "26.05"; path = "${dataNixos26}/options-26.05.json"; }
           { source = "Home Manager"; version = "unstable"; path = "${dataHomeManagerUnstable}/options-unstable.json"; }
           { source = "Home Manager"; version = "25.11"; path = "${dataHomeManager25}/options-25.11.json"; }
+          { source = "Home Manager"; version = "26.05"; path = "${dataHomeManager26}/options-26.05.json"; }
           { source = "Impermanence"; version = "unstable"; path = "${dataImpermanenceUnstable}/options-unstable.json"; }
           { source = "microvm.nix"; version = "unstable"; path = "${dataMicrovmNixUnstable}/options-unstable.json"; }
           { source = "ethereum.nix"; version = "unstable"; path = "${dataEthereumNixUnstable}/options-unstable.json"; }
@@ -257,8 +287,10 @@
         optionsDatasets = [
           { source = "NixOS"; version = "unstable"; path = "${dataNixosUnstable}/options-unstable.json"; }
           { source = "NixOS"; version = "25.11"; path = "${dataNixos25}/options-25.11.json"; }
+          { source = "NixOS"; version = "26.05"; path = "${dataNixos26}/options-26.05.json"; }
           { source = "Home Manager"; version = "unstable"; path = "${dataHomeManagerUnstable}/options-unstable.json"; }
           { source = "Home Manager"; version = "25.11"; path = "${dataHomeManager25}/options-25.11.json"; }
+          { source = "Home Manager"; version = "26.05"; path = "${dataHomeManager26}/options-26.05.json"; }
           { source = "Impermanence"; version = "unstable"; path = "${dataImpermanenceUnstable}/options-unstable.json"; }
           { source = "microvm.nix"; version = "unstable"; path = "${dataMicrovmNixUnstable}/options-unstable.json"; }
           { source = "ethereum.nix"; version = "unstable"; path = "${dataEthereumNixUnstable}/options-unstable.json"; }
